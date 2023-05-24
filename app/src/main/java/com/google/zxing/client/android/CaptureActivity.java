@@ -119,6 +119,10 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private InactivityTimer inactivityTimer;
   private BeepManager beepManager;
   private AmbientLightManager ambientLightManager;
+  private Result rawResult;
+  private Bitmap barcode;
+  private float scaleFactor;
+  public boolean runtimeRequestPending = false;
 
   ViewfinderView getViewfinderView() {
     return viewfinderView;
@@ -165,6 +169,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       overridePendingTransition(0, 0);
       startActivity(getIntent());
       overridePendingTransition(0, 0);
+    } else if (requestCode == 200) {
+      Log.d(TAG, "LOCATION FINE permission = " + grantResults[0]);
     } else {
       finish();
     }
@@ -173,7 +179,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   @Override
   protected void onResume() {
     super.onResume();
-    
+
     // historyManager must be initialized here to update the history preference
     historyManager = new HistoryManager(this);
     historyManager.trimHistory();
@@ -202,7 +208,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     }
 
     resetStatusView();
-
 
     beepManager.updatePrefs();
     ambientLightManager.start(cameraManager);
@@ -246,7 +251,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             cameraManager.setManualCameraId(cameraId);
           }
         }
-        
         String customPromptMessage = intent.getStringExtra(Intents.Scan.PROMPT_MESSAGE);
         if (customPromptMessage != null) {
           statusView.setText(customPromptMessage);
@@ -288,6 +292,11 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     } else {
       // Install the callback and wait for surfaceCreated() to init the camera.
       surfaceHolder.addCallback(this);
+    }
+
+    if (runtimeRequestPending) {
+      runtimeRequestPending = false;
+      handleDecode(rawResult, barcode, scaleFactor);
     }
   }
 
@@ -466,7 +475,13 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public void handleDecode(Result rawResult, Bitmap barcode, float scaleFactor) {
     inactivityTimer.onActivity();
     lastResult = rawResult;
+
     ResultHandler resultHandler = ResultHandlerFactory.makeResultHandler(this, rawResult);
+    if (runtimeRequestPending) {
+      this.rawResult = rawResult;
+      this.barcode = barcode;
+      this.scaleFactor = scaleFactor;
+    }
 
     boolean fromLiveScan = barcode != null;
     if (fromLiveScan) {

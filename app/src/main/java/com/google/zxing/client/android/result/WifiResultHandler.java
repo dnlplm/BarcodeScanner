@@ -16,14 +16,23 @@
 
 package com.google.zxing.client.android.result;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.PermissionChecker;
+
 import com.google.zxing.client.android.CaptureActivity;
+import com.google.zxing.client.android.PreferencesActivity;
 import com.google.zxing.client.android.R;
 import com.google.zxing.client.android.wifi.WifiConfigManager;
 import com.google.zxing.client.result.ParsedResult;
@@ -44,6 +53,19 @@ public final class WifiResultHandler extends ResultHandler {
   public WifiResultHandler(CaptureActivity activity, ParsedResult result) {
     super(activity, result);
     parent = activity;
+
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+    if (prefs.getBoolean(PreferencesActivity.KEY_PERMISSION_LOCATION, true)) {
+      if (ContextCompat.checkSelfPermission(parent, Manifest.permission.ACCESS_FINE_LOCATION)
+              != PackageManager.PERMISSION_GRANTED) {
+        Log.d(TAG, "Asking for fine location permission");
+        activity.runtimeRequestPending = true;
+        prefs.edit().putBoolean(PreferencesActivity.KEY_PERMISSION_LOCATION, false).commit();
+        ActivityCompat.requestPermissions(parent,
+                new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                200);
+      }
+    }
   }
 
   @Override
@@ -74,7 +96,7 @@ public final class WifiResultHandler extends ResultHandler {
           Toast.makeText(activity.getApplicationContext(), R.string.wifi_changing_network, Toast.LENGTH_SHORT).show();
         }
       });
-      new WifiConfigManager(wifiManager).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, wifiResult);
+      new WifiConfigManager(wifiManager, parent).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, wifiResult);
       parent.restartPreviewAfterDelay(0L);
     }
   }

@@ -16,14 +16,19 @@
 
 package com.google.zxing.client.android.wifi;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiEnterpriseConfig;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.regex.Pattern;
 
+import com.google.zxing.client.android.CaptureActivity;
 import com.google.zxing.client.result.WifiParsedResult;
 
 /**
@@ -38,9 +43,11 @@ public final class WifiConfigManager extends AsyncTask<WifiParsedResult,Object,O
   private static final Pattern HEX_DIGITS = Pattern.compile("[0-9A-Fa-f]+");
 
   private final WifiManager wifiManager;
+  private static CaptureActivity activity = null;
 
-  public WifiConfigManager(WifiManager wifiManager) {
+  public WifiConfigManager(WifiManager wifiManager, CaptureActivity parent) {
     this.wifiManager = wifiManager;
+    activity = parent;
   }
 
   @Override
@@ -197,14 +204,18 @@ public final class WifiConfigManager extends AsyncTask<WifiParsedResult,Object,O
   }
 
   private static Integer findNetworkInExistingConfig(WifiManager wifiManager, String ssid) {
-    Iterable<WifiConfiguration> existingConfigs = wifiManager.getConfiguredNetworks();
-    if (existingConfigs != null) {
-      for (WifiConfiguration existingConfig : existingConfigs) {
-        String existingSSID = existingConfig.SSID;
-        if (existingSSID != null && existingSSID.equals(ssid)) {
-          return existingConfig.networkId;
+    if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+      Iterable<WifiConfiguration> existingConfigs = wifiManager.getConfiguredNetworks();
+      if (existingConfigs != null) {
+        for (WifiConfiguration existingConfig : existingConfigs) {
+          String existingSSID = existingConfig.SSID;
+          if (existingSSID != null && existingSSID.equals(ssid)) {
+            return existingConfig.networkId;
+          }
         }
       }
+      return null;
     }
     return null;
   }
