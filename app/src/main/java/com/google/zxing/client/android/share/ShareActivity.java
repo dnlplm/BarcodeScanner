@@ -177,9 +177,9 @@ public final class ShareActivity extends Activity {
       if (cursor == null || !cursor.moveToFirst()) {
         return;
       }
-      id = cursor.getString(cursor.getColumnIndex(BaseColumns._ID));
-      name = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-      hasPhone = cursor.getInt(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0;
+      id = cursor.getString(cursor.getColumnIndexOrThrow(BaseColumns._ID));
+      name = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+      hasPhone = cursor.getInt(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0;
     }
 
     // Don't require a name to be present, this contact might be just a phone number.
@@ -196,8 +196,8 @@ public final class ShareActivity extends Activity {
                                                 null)) {
         if (phonesCursor != null) {
           int foundPhone = 0;
-          int phonesNumberColumn = phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-          int phoneTypeColumn = phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE);
+          int phonesNumberColumn = phonesCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER);
+          int phoneTypeColumn = phonesCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.TYPE);
           while (phonesCursor.moveToNext() && foundPhone < Contents.PHONE_KEYS.length) {
             String number = phonesCursor.getString(phonesNumberColumn);
             if (number != null && !number.isEmpty()) {
@@ -218,7 +218,7 @@ public final class ShareActivity extends Activity {
                                                null)) {
       if (methodsCursor != null && methodsCursor.moveToNext()) {
         String data = methodsCursor.getString(
-            methodsCursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS));
+            methodsCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS));
         if (data != null && !data.isEmpty()) {
           bundle.putString(ContactsContract.Intents.Insert.POSTAL, massageContactData(data));
         }
@@ -232,7 +232,7 @@ public final class ShareActivity extends Activity {
                                              null)) {
       if (emailCursor != null) {
         int foundEmail = 0;
-        int emailColumn = emailCursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA);
+        int emailColumn = emailCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.DATA);
         while (emailCursor.moveToNext() && foundEmail < Contents.EMAIL_KEYS.length) {
           String email = emailCursor.getString(emailColumn);
           if (email != null && !email.isEmpty()) {
